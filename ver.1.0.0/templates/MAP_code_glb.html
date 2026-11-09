@@ -1,0 +1,548 @@
+<!-- PSEUDO-HOLOGRAPHIC MAP / GLBモデル・設定 -->
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.16.0/dist/maplibre-gl.css">
+
+<style>
+#phm-shell, #phm-shell * { box-sizing: border-box; }
+#phm-shell {
+  --phm-accent: #69ecff;
+  --phm-card-size: 14px;
+  --phm-card-width: 30%;
+  position: relative;
+  width: 100%;
+  height: 480px;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(105,236,255,.55);
+  border-radius: 10px;
+  background: #071c2a;
+  box-shadow: 0 0 0 1px rgba(105,236,255,.08), 0 20px 50px rgba(0,0,0,.36);
+  font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+}
+#phm-map { position: absolute; inset: 0; width: 100%; height: 100%; }
+#phm-map canvas.phm-three-overlay {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  background: transparent;
+}
+#phm-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(110,239,255,.027) 0 1px, transparent 1px 5px),
+    radial-gradient(ellipse at 55% 55%, transparent 30%, rgba(0,15,26,.23) 100%);
+}
+#phm-shell .phm-corner {
+  position: absolute;
+  z-index: 8;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+  border-color: var(--phm-accent);
+  border-style: solid;
+  filter: drop-shadow(0 0 5px rgba(105,236,255,.6));
+}
+#phm-shell .phm-tl { top: 6px; left: 6px; border-width: 2px 0 0 2px; }
+#phm-shell .phm-tr { top: 6px; right: 6px; border-width: 2px 2px 0 0; }
+#phm-shell .phm-bl { bottom: 6px; left: 6px; border-width: 0 0 2px 2px; }
+#phm-shell .phm-br { bottom: 6px; right: 6px; border-width: 0 2px 2px 0; }
+
+#phm-card {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 9;
+  width: var(--phm-card-width);
+  max-height: 55%;
+  min-width: 0;
+  padding: 1.5%;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  color: #e4f6fc;
+  background: rgba(6,25,42,.94);
+  border: 1px solid rgba(105,236,255,.53);
+  border-radius: 5px;
+  box-shadow: 0 5px 24px rgba(0,0,0,.35);
+  font-size: var(--phm-card-size);
+  line-height: 1.45;
+}
+#phm-card[hidden] { display: none; }
+#phm-card .phm-card-label {
+  margin: 0 0 .55em;
+  padding-right: 38px;
+  color: var(--phm-accent);
+  font-size: .62em;
+  font-weight: 700;
+  letter-spacing: .18em;
+}
+#phm-card h2 { margin: 0 0 .5em; padding: 0; color: #f0fcff; font-size: 1.25em; line-height: 1.35; }
+#phm-card p { margin: 0 0 .75em; padding: 0; color: #b7ced9; font-size: 1em; line-height: 1.5; }
+#phm-card a {
+  display: inline-block;
+  padding: .45em .8em;
+  color: var(--phm-accent);
+  border: 1px solid rgba(105,236,255,.65);
+  border-radius: 3px;
+  background: rgba(105,236,255,.1);
+  text-decoration: none;
+  font-size: .95em;
+}
+#phm-card .phm-close {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  color: var(--phm-accent);
+  border: 1px solid rgba(105,236,255,.53);
+  border-radius: 4px;
+  background: rgba(4,30,43,.92);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+#phm-card .phm-close:hover, #phm-card a:hover { background: rgba(105,236,255,.23); }
+
+#phm-shell .phm-hud {
+  position: absolute;
+  top: 10px;
+  right: 68px;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 46px;
+  padding: 5px 8px;
+  color: var(--phm-accent);
+  background: rgba(2,16,30,.86);
+  border: 1px solid rgba(105,236,255,.33);
+  border-radius: 3px;
+  font: 11px/1.3 ui-monospace, SFMono-Regular, Consolas, monospace;
+  white-space: nowrap;
+  pointer-events: none;
+}
+#phm-shell .phm-hud span + span { padding-left: 7px; border-left: 1px solid rgba(105,236,255,.3); }
+#phm-shell .maplibregl-ctrl-top-right { z-index: 10; }
+#phm-shell .maplibregl-ctrl-group {
+  overflow: hidden;
+  border: 1px solid rgba(105,236,255,.4);
+  border-radius: 4px;
+  background: rgba(4,30,43,.92);
+  box-shadow: none;
+}
+#phm-shell .maplibregl-ctrl-group button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--phm-accent);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+#phm-shell .maplibregl-ctrl-group button:hover:not(:disabled) { background: rgba(105,236,255,.12); }
+#phm-shell .maplibregl-ctrl-zoom-out { border-top: 1px solid rgba(105,236,255,.4) !important; }
+#phm-shell .maplibregl-ctrl-zoom-in .maplibregl-ctrl-icon,
+#phm-shell .maplibregl-ctrl-zoom-out .maplibregl-ctrl-icon {
+  filter: brightness(0) saturate(100%) invert(85%) sepia(40%) saturate(700%) hue-rotate(145deg);
+}
+#phm-shell .phm-turn { font-size: 26px; cursor: pointer; }
+#phm-shell .phm-reset { font-size: 11px; font-weight: 700; cursor: pointer; }
+#phm-shell .maplibregl-ctrl-scale { color: #d8f8ff; background: rgba(4,30,43,.85); border-color: var(--phm-accent); }
+#phm-shell .phm-glb-status {
+  position: absolute; right: 12px; bottom: 12px; z-index: 10;
+  padding: 4px 7px; max-width: min(72%, 350px); overflow-wrap: anywhere;
+  background: rgba(4,30,43,.92); border: 1px solid rgba(105,236,255,.4);
+  border-radius: 3px; color: #a4f6ff; font: 11px/1.35 ui-monospace, monospace;
+  pointer-events: none;
+}
+
+/* Positron（明るい地図）用の色調整。 */
+#phm-shell[data-theme="positron"] {
+  --phm-accent: #4f6579;
+  background: #f2f4f5;
+  border-color: #d3d9e0;
+  box-shadow: 0 5px 24px rgba(35,47,58,.14);
+}
+#phm-shell[data-theme="positron"]::after { background: none; }
+#phm-shell[data-theme="positron"] .phm-corner { border-color: #8d98a4; filter: none; opacity: .45; }
+#phm-shell[data-theme="positron"] #phm-card {
+  background: #fff; color: #202124; border-color: #e1e4e8;
+  box-shadow: 0 4px 24px rgba(24,38,55,.22);
+}
+#phm-shell[data-theme="positron"] #phm-card h2 { color: #202124; }
+#phm-shell[data-theme="positron"] #phm-card p { color: #64686e; }
+#phm-shell[data-theme="positron"] #phm-card .phm-card-label { color: #75808b; }
+#phm-shell[data-theme="positron"] #phm-card a { background: #2376e8; border-color: #2376e8; color: #fff; }
+#phm-shell[data-theme="positron"] #phm-card .phm-close { background: #f5f6f7; color: #3f4650; border-color: #d6dbe0; }
+#phm-shell[data-theme="positron"] .phm-hud { background: rgba(255,255,255,.94); color: #4d5863; border-color: #d6dbe0; }
+#phm-shell[data-theme="positron"] .phm-hud span + span { border-left-color: #d6dbe0; }
+#phm-shell[data-theme="positron"] .maplibregl-ctrl-group { background: rgba(255,255,255,.98); border-color: #d2d7dd; }
+#phm-shell[data-theme="positron"] .maplibregl-ctrl-group button { color: #2a2e34; }
+#phm-shell[data-theme="positron"] .maplibregl-ctrl-zoom-in .maplibregl-ctrl-icon,
+#phm-shell[data-theme="positron"] .maplibregl-ctrl-zoom-out .maplibregl-ctrl-icon { filter: brightness(0) opacity(.85); }
+#phm-shell[data-theme="positron"] .maplibregl-ctrl-zoom-out {
+  border-top-color: #d2d7dd !important;
+}
+#phm-shell[data-theme="positron"] .maplibregl-ctrl-scale { background: rgba(255,255,255,.86); color: #31363b; border-color: #31363b; }
+@media (max-width: 1024px) {
+  #phm-card { top: auto; bottom: 12px; left: 12px; width: min(420px, calc(100% - 24px)); max-height: calc(100% - 24px); padding: 14px; }
+}
+@media (max-width: 600px) {
+  #phm-shell .phm-hud { gap: 3px; padding: 4px 5px; font-size: 9px; }
+  #phm-shell .phm-hud span + span { padding-left: 4px; }
+}
+</style>
+
+<section id="phm-shell" data-theme="dark" aria-label="擬似ホログラム風3Dマップ">
+  <div id="phm-map" aria-label="3D地図"></div>
+  <aside id="phm-card" aria-label="所在地情報">
+    <button type="button" class="phm-close" aria-label="所在地情報を閉じる">×</button>
+    <div class="phm-card-label">LOCATION / SELECTED</div>
+    <h2 id="phm-place-name"></h2>
+    <p id="phm-place-address"></p>
+    <a id="phm-place-link" target="_blank" rel="noopener noreferrer">Googleマップで開く</a>
+  </aside>
+  <div class="phm-hud" aria-hidden="true">
+    <span id="phm-hud-zoom">ZOOM —</span>
+    <span id="phm-hud-pitch">PITCH —</span>
+    <span id="phm-hud-bearing">BEARING —</span>
+  </div>
+  <output id="phm-glb-status" class="phm-glb-status" aria-live="polite" hidden></output>
+  <i class="phm-corner phm-tl" aria-hidden="true"></i>
+  <i class="phm-corner phm-tr" aria-hidden="true"></i>
+  <i class="phm-corner phm-bl" aria-hidden="true"></i>
+  <i class="phm-corner phm-br" aria-hidden="true"></i>
+</section>
+
+<script type="module">
+import * as maplibregl from 'https://unpkg.com/maplibre-gl@6.16.0/dist/maplibre-gl.mjs';
+
+// ===== ユーザー設定：ここだけ変更 =====
+const SETTINGS = {
+  location: {
+    name: '六本木ヒルズ',
+    address: '〒106-6108 東京都港区六本木6-10-1',
+    lng: 139.7292361,
+    lat: 35.6603972
+  },
+  model: {
+    glbUrl: './wp-content/uploads/open-office-demo.glb', // HTMLを設置したサイト内の相対パス
+    baseMaxSideMeters: 10,
+    scale: 8,                     // 基準寸法倍率：0.05～30倍
+    color: '#69ecff',             // モデルのホログラム色
+    transparencyPercent: 78,     // 0％＝不透明、95％＝透過
+    rotationDegrees: 0,          // モデルの回転角
+    altitudeMeters: 1,           // 地面からの高さ（m）
+    zoomSizesPercent: { 15: 50, 16: 100, 17: 150 }
+  },
+  map: {
+    style: 'dark',             // 'dark' または 'positron'
+    height: 480,
+    zoom: 16,
+    minZoom: 15,
+    maxZoom: 17,
+    pitch: 60,
+    bearing: -45,
+    showScale: true,
+    show3D: true,
+    buildingColorDark: '#364451',
+    buildingColorPositron: '#afb7c0',
+    defaultBuildingHeight: 10
+  }
+};
+// ===== ユーザー設定ここまで =====
+
+const location = SETTINGS.location;
+const modelSettings = SETTINGS.model;
+const options = SETTINGS.map;
+const shell = document.getElementById('phm-shell');
+const card = document.getElementById('phm-card');
+shell.style.height = options.height + 'px';
+shell.dataset.theme = options.style;
+document.getElementById('phm-place-name').textContent = location.name;
+document.getElementById('phm-place-address').textContent = location.address;
+document.getElementById('phm-place-link').href =
+  'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(location.lat + ',' + location.lng);
+
+const showCard = () => { card.hidden = false; };
+const closeButton = card.querySelector('.phm-close');
+closeButton.addEventListener('click', () => { card.hidden = true; });
+const smallScreen = window.matchMedia('(max-width: 1024px)');
+card.hidden = smallScreen.matches;
+
+// ===== 地図 =====
+const map = new maplibregl.Map({
+  container: 'phm-map',
+  style: 'https://tiles.openfreemap.org/styles/' + options.style,
+  center: [location.lng, location.lat],
+  zoom: options.zoom,
+  minZoom: options.minZoom,
+  maxZoom: options.maxZoom,
+  pitch: options.pitch,
+  bearing: options.bearing,
+  canvasContextAttributes: { antialias: true }
+});
+map.setPadding({ top: 100, bottom: 0, left: 0, right: 0 });
+map.scrollZoom.enable({ around: 'center' });
+
+const hudZoom = document.getElementById('phm-hud-zoom');
+const hudPitch = document.getElementById('phm-hud-pitch');
+const hudBearing = document.getElementById('phm-hud-bearing');
+function updateHud() {
+  hudZoom.textContent = 'ZOOM ' + map.getZoom().toFixed(1);
+  hudPitch.textContent = 'PITCH ' + Math.round(map.getPitch()) + '°';
+  hudBearing.textContent = 'BEARING ' + Math.round(map.getBearing()) + '°';
+}
+map.on('move', updateHud);
+updateHud();
+
+// ===== 操作ボタン =====
+map.addControl(new maplibregl.NavigationControl({ showZoom: true, showCompass: false }), 'top-right');
+let turnCount = 0;
+function control(label, className, title, onClick) {
+  return {
+    onAdd() {
+      const group = document.createElement('div');
+      group.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = className;
+      button.textContent = label;
+      if (className === 'phm-turn') {
+        button.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10.6 5.3a7.9 7.9 0 1 0 9 8.9"/><path d="M9.9 1.4v8.2l6-4.1z" fill="currentColor" stroke="none"/></svg>';
+      }
+      button.title = title;
+      button.setAttribute('aria-label', title);
+      button.addEventListener('click', onClick);
+      group.appendChild(button);
+      this.element = group;
+      return group;
+    },
+    onRemove() { this.element.remove(); }
+  };
+}
+map.addControl(control('', 'phm-turn', '地図を90度回転', () => {
+  turnCount = (turnCount + 1) % 4;
+  map.easeTo({ bearing: options.bearing + turnCount * 90, duration: 650 });
+}), 'top-right');
+map.addControl(control('RESET', 'phm-reset', '初期位置へ戻す', () => {
+  turnCount = 0;
+  map.easeTo({
+    center: [location.lng, location.lat], zoom: options.zoom,
+    pitch: options.pitch, bearing: options.bearing, duration: 650
+  });
+  card.hidden = smallScreen.matches;
+}), 'top-right');
+if (options.showScale) {
+  map.addControl(new maplibregl.ScaleControl({ maxWidth: 150, unit: 'metric' }), 'bottom-left');
+}
+
+// ===== 3D建物 =====
+map.on('load', () => {
+  if (!options.show3D) return;
+  const labelLayer = map.getStyle().layers.find(layer =>
+    layer.type === 'symbol' && layer.layout && layer.layout['text-field']
+  );
+  map.addSource('phm-buildings-source', {
+    type: 'vector', url: 'https://tiles.openfreemap.org/planet'
+  });
+  map.addLayer({
+    id: 'phm-buildings',
+    source: 'phm-buildings-source',
+    'source-layer': 'building',
+    type: 'fill-extrusion',
+    minzoom: 15,
+    filter: [
+      'all',
+      ['!=', ['get', 'hide_3d'], true],
+      ['>', ['distance', {
+        type: 'Point',
+        coordinates: [location.lng, location.lat]
+      }], 0]
+    ],
+    paint: {
+      'fill-extrusion-color': options.style === 'positron'
+        ? options.buildingColorPositron : options.buildingColorDark,
+      'fill-extrusion-height': [
+        'interpolate', ['linear'], ['zoom'], 15, 0,
+        16, ['coalesce', ['get', 'render_height'], options.defaultBuildingHeight]
+      ],
+      'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+      'fill-extrusion-opacity': options.style === 'positron' ? 1 : 0.92
+    }
+  }, labelLayer ? labelLayer.id : undefined);
+});
+
+// ===== GLBモデル =====
+const glbStatus = document.getElementById('phm-glb-status');
+function showGlbError(message) {
+  glbStatus.textContent = 'GLB：' + message;
+  glbStatus.hidden = false;
+}
+map.on('click', event => {
+  const point = map.project([location.lng, location.lat]);
+  if (Math.hypot(event.point.x - point.x, event.point.y - point.y) < 110) showCard();
+});
+
+map.on('load', async () => {
+  try {
+    const [THREE, gltfModule] = await Promise.all([
+      import('https://cdn.jsdelivr.net/npm/three@0.181.0/+esm'),
+      import('https://cdn.jsdelivr.net/npm/three@0.181.0/examples/jsm/loaders/GLTFLoader.js/+esm')
+    ]);
+    const GLTFLoader = gltfModule.GLTFLoader;
+    const gltf = await new GLTFLoader().loadAsync(modelSettings.glbUrl);
+
+    const model = gltf.scene;
+    const bounds = new THREE.Box3().setFromObject(model);
+    if (bounds.isEmpty()) throw new Error('GLB内に表示可能なメッシュがありません');
+    const size = bounds.getSize(new THREE.Vector3());
+    const maxSide = Math.max(size.x, size.y, size.z);
+    if (!(maxSide > 0) || !Number.isFinite(maxSide)) throw new Error('モデルの寸法が不正です');
+    const factor = modelSettings.baseMaxSideMeters / maxSide;
+    const center = bounds.getCenter(new THREE.Vector3());
+    model.scale.multiplyScalar(factor);
+    model.position.set(-center.x * factor, -bounds.min.y * factor, -center.z * factor);
+
+    const tint = new THREE.Color(modelSettings.color);
+    const opacity = Math.max(.05, 1 - modelSettings.transparencyPercent / 100);
+    model.traverse(child => {
+      if (!child.isMesh) return;
+      child.frustumCulled = false;
+      child.renderOrder = 1;
+      const applyHoloMaterial = original => {
+        const material = original.clone();
+        if (material.color) material.color.copy(tint);
+        if (material.emissive) material.emissive.copy(tint);
+        if ('emissiveIntensity' in material) material.emissiveIntensity = .28;
+        material.transparent = true;
+        material.opacity = opacity;
+        material.depthWrite = false;
+        material.depthTest = true;
+        material.side = THREE.DoubleSide;
+        material.needsUpdate = true;
+        return material;
+      };
+      child.material = Array.isArray(child.material)
+        ? child.material.map(applyHoloMaterial) : applyHoloMaterial(child.material);
+
+      const edges = new THREE.EdgesGeometry(child.geometry, 22);
+      const positions = edges.getAttribute('position');
+      if (positions && positions.count > 0) {
+        const lines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({
+          color: tint,
+          transparent: true,
+          opacity: Math.max(0, Math.min(1, (.32 + opacity) * .65)),
+          depthWrite: false,
+          depthTest: true
+        }));
+        lines.frustumCulled = false;
+        lines.renderOrder = 3;
+        child.add(lines);
+      } else {
+        edges.dispose();
+      }
+    });
+
+    const holder = new THREE.Group();
+    holder.rotation.y = THREE.MathUtils.degToRad(modelSettings.rotationDegrees);
+    holder.add(model);
+    function updateModelSize() {
+      const z = Math.max(15, Math.min(17, map.getZoom()));
+      const low = Math.floor(z), high = Math.min(17, low + 1);
+      const sizes = modelSettings.zoomSizesPercent;
+      const percentage = sizes[low] + (sizes[high] - sizes[low]) * (z - low);
+      holder.scale.setScalar(modelSettings.scale * percentage / 100);
+      map.triggerRepaint();
+    }
+    map.on('zoom', updateModelSize);
+    updateModelSize();
+
+    const merc = maplibregl.MercatorCoordinate.fromLngLat(
+      [location.lng, location.lat], modelSettings.altitudeMeters
+    );
+    const units = merc.meterInMercatorCoordinateUnits();
+    const modelMatrix = new THREE.Matrix4()
+      .makeTranslation(merc.x, merc.y, merc.z)
+      .scale(new THREE.Vector3(units, -units, units))
+      .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2));
+
+    let overlayCanvas = null;
+    let renderer = null;
+    let overlaySize = {width: 0, height: 0};
+    const layer = {
+      id: 'phm-custom-glb', type: 'custom', renderingMode: '2d',
+      onAdd(mapInstance) {
+        this.camera = new THREE.Camera();
+        this.scene = new THREE.Scene();
+        this.scene.add(new THREE.HemisphereLight(0xd5ffff, 0x183b48, 1.2));
+        const sun = new THREE.DirectionalLight(0xc4fdff, 1.1);
+        sun.position.set(18, 35, 15);
+        this.scene.add(sun, holder);
+        overlayCanvas = document.createElement('canvas');
+        overlayCanvas.className = 'phm-three-overlay';
+        overlayCanvas.setAttribute('aria-hidden', 'true');
+        mapInstance.getContainer().appendChild(overlayCanvas);
+        renderer = new THREE.WebGLRenderer({
+          canvas: overlayCanvas,
+          alpha: true,
+          antialias: true,
+          premultipliedAlpha: true,
+          powerPreference: 'low-power'
+        });
+        renderer.autoClear = true;
+        renderer.setClearColor(0x000000, 0);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+        renderer.shadowMap.enabled = false;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+      },
+      render(_gl, args) {
+        try {
+          const projection = args?.defaultProjectionData?.mainMatrix;
+          if (!renderer || !projection) return;
+          const canvas = map.getCanvas();
+          const width = Math.max(1, Math.round(canvas.clientWidth || map.getContainer().clientWidth));
+          const height = Math.max(1, Math.round(canvas.clientHeight || map.getContainer().clientHeight));
+          if (width !== overlaySize.width || height !== overlaySize.height) {
+            renderer.setSize(width, height, false);
+            overlaySize = {width, height};
+          }
+          this.camera.projectionMatrix.fromArray(projection).multiply(modelMatrix);
+          this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();
+          renderer.render(this.scene, this.camera);
+        } catch (error) {
+          if (!this.reportedError) {
+            this.reportedError = true;
+            showGlbError('描画エラー：' + (error.message || error));
+            console.error('[GLB render]', error);
+          }
+        }
+      },
+      onRemove() {
+        renderer?.dispose();
+        overlayCanvas?.remove();
+        renderer = null;
+        overlayCanvas = null;
+      }
+    };
+    map.addLayer(layer);
+    map.triggerRepaint();
+  } catch (error) {
+    showGlbError('エラー：' + (error.message || error));
+    console.error('[GLB]', error);
+  }
+});
+</script>

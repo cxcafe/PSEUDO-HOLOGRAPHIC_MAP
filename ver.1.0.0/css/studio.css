@@ -1,0 +1,137 @@
+/* 生成画面専用。地図の高さと右パネルの高さを同期させます。 */
+.studio-page{width:min(1540px,calc(100% - 40px));padding:28px 0 38px}
+.studio-header{display:flex;justify-content:space-between;align-items:start;gap:18px;margin-bottom:20px}
+.studio-header .lead{margin:6px 0 0;font-size:.87rem}
+.studio-version{white-space:nowrap;color:#81bacd;border:1px solid #244659;border-radius:5px;padding:6px 9px;font:700 .66rem system-ui;letter-spacing:.12em}
+.studio-layout{display:grid;grid-template-columns:minmax(0,1fr) 382px;align-items:start;gap:18px}
+.map-workspace{min-width:0}
+.workspace-label{height:24px;display:flex;align-items:center;gap:9px;font-size:.7rem;letter-spacing:.17em;font-weight:800;color:#d1f8ff}
+.live-dot{height:7px;width:7px;border-radius:50%;background:#4bebd5;box-shadow:0 0 12px #4bebd5}
+.studio-sidebar{background:#0b1b2c;border:1px solid #244a60;border-radius:11px;overflow:hidden;box-shadow:0 12px 38px #0004;min-width:0;margin-top:44px;height:var(--studio-map-height,480px);display:flex;flex-direction:column}
+.sidebar-heading{padding:17px 18px 14px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(120deg,#102b42,#0b1b2c)}
+.sidebar-heading>div{display:flex;flex-direction:column;gap:1px}
+.sidebar-kicker{font-size:.65rem;font-weight:700;color:#71bed4;letter-spacing:.2em}
+.sidebar-heading strong{font-size:.95rem;letter-spacing:.08em}
+.sidebar-version{font-size:.65rem;color:#80a2b7}
+.studio-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid #214154;border-bottom:1px solid #214154;background:#071623}
+.studio-tabs button{appearance:none;background:transparent;border:0;border-right:1px solid #214154;color:#809bab;cursor:pointer;min-width:0;padding:15px 4px 13px;font-size:.64rem;font-weight:800;letter-spacing:.012em}
+.studio-tabs button:last-child{border-right:0}
+.studio-tabs button.is-active{background:#123348;color:#9df7ff;box-shadow:inset 0 -3px #69ecff}
+.studio-tabs button:hover{color:#e5fdff}
+.style-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.style-buttons button{
+  appearance:none;min-width:0;min-height:40px;border:1px solid #365d73;
+  border-radius:6px;padding:9px 12px;background:#132d40;color:#d7f5ff;
+  font:700 .78rem system-ui,-apple-system,sans-serif;cursor:pointer;
+  transition:background-color .15s,border-color .15s,color .15s;
+}
+.style-buttons button:not(:disabled):hover{background:#1b4258;border-color:#5c9ab0}
+.style-buttons button[aria-pressed="true"]{background:#144154;border-color:#69ecff;color:#b8f8ff}
+.style-buttons button:focus-visible{outline:2px solid #91f5ff;outline-offset:2px}
+.style-buttons button:disabled{cursor:default;opacity:.55}
+.sidebar-scroll{min-height:0;flex:1;max-height:none;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#31566c transparent;padding:20px 18px 22px}
+.studio-tab-content[hidden],#editor-image-fields[hidden],#editor-3d-fields[hidden],#custom-model-wrap[hidden],#custom-image-wrap[hidden],#custom-glb-upload[hidden]{display:none!important}
+.studio-tab-content{display:flex;flex-direction:column;gap:13px;min-width:0}
+.section-heading h2{font-size:.92rem;margin:0 0 4px;color:#e5f8ff;letter-spacing:.03em}
+.section-heading p{font-size:.74rem;color:#8daaba;margin:0;line-height:1.55}
+.field-grid{display:grid;gap:11px}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field>span,.side-caption{font-size:.73rem;color:#a3bfcc;font-weight:700}
+.field input:not([type="range"]):not([type="color"]),.field select,.field textarea,.editor-toolbar select{
+  width:100%;min-width:0;border:1px solid #2e5268;background:#071725;border-radius:6px;
+  color:#e4faff;font-size:.81rem;padding:10px 10px;outline-offset:1px;line-height:1.4;font-family:inherit}
+.field textarea{resize:vertical;font-family:ui-monospace,monospace;font-size:.73rem;line-height:1.4}
+.field input:focus,.field select:focus,.field textarea:focus{outline:1px solid #69ecff}
+.field input[type="color"]{width:100%;height:38px;border:1px solid #2e5268;background:#071725;border-radius:6px;padding:3px;cursor:pointer}
+.field input[type="range"]{width:100%;accent-color:#69ecff;cursor:pointer}
+.coordinate-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.triple-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-top:11px}
+.editor-toolbar{display:flex;align-items:end;gap:8px}
+.editor-toolbar .field{flex:1}
+.editor-toolbar .compact>span{margin-bottom:0}
+.editor-toolbar button{flex:none}
+.soft-btn,.primary-btn,.side-options button{border:1px solid #365d73;color:#d7f5ff;background:#132d40;min-height:37px;border-radius:6px;padding:8px 11px;font-weight:700;font-size:.75rem;cursor:pointer}
+.soft-btn:hover,.side-options button:hover{background:#1b4258;border-color:#5c9ab0}
+.primary-btn{color:#052333;background:#78eaff;border-color:#78eaff}
+.primary-btn:hover{background:#a3f6ff}
+.soft-btn.danger{color:#ffb4b5;border-color:#6e414e;background:#33212b}
+.inline-actions{display:flex;gap:8px;flex-wrap:wrap}
+.inline-actions button{flex:1}
+.editor-actions{display:flex;gap:8px}.editor-actions .primary-btn{flex:1}
+.editor-separator{height:1px;background:#264758;margin:5px 0}
+#editor-3d-fields,#editor-image-fields{display:flex;flex-direction:column;gap:11px}
+.upload-field{border:1px dashed #34667d;background:#10293c;padding:10px;border-radius:6px;display:flex;flex-direction:column;gap:5px}
+.upload-field>span{font-size:.72rem;font-weight:700;color:#d0f4ff}
+.upload-field input{max-width:100%;font-size:.7rem;color:#cadce9}
+.upload-field small,.help-copy{font-size:.69rem;color:#88a9bb;line-height:1.65}
+.help-copy{margin:1px 0}
+.help-copy code{color:#b3e8fb}
+.checkline{display:flex;gap:8px;align-items:center;font-size:.79rem;cursor:pointer}
+.checkline input{accent-color:#69ecff}
+.full-width{width:100%}
+.asset-preview{display:flex;align-items:center;gap:14px;border:1px solid #244658;padding:8px 10px;border-radius:6px;font-size:.75rem;color:#7897a9;min-height:55px}
+.asset-preview img{width:65px;height:60px;object-fit:contain}
+.editor-status{padding:10px 17px;border-top:1px solid #244a60;color:#fff;font-size:.71rem;min-height:42px;background:#081623}
+.editor-status .status-label{color:#fff}
+.editor-status .status-message{color:#fff}
+.editor-status.is-error .status-message{color:#ff0}
+/* PCは左に編集画面、右に地図。モバイルは上に開閉式編集画面、下に地図。 */
+.studio-page{width:min(1600px,calc(100% - 36px));padding:22px 0 35px}
+.studio-header{margin-bottom:6px}
+.studio-header h1{font-size:clamp(1.35rem,2.4vw,2rem);letter-spacing:.03em}
+.studio-header .lead{font-size:.9rem}
+.studio-layout{grid-template-columns: minmax(345px,390px) minmax(0,1fr);gap:18px;align-items:start}
+.studio-sidebar{height:var(--studio-map-height,480px);margin-top:24px}
+.studio-controls{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+.sidebar-heading{min-height:56px;padding:10px 16px}
+.studio-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
+.studio-tabs button{font-size:.66rem;padding:12px 3px}
+.studio-tabs button:focus-visible{outline:2px solid #91f5ff;outline-offset:-2px}
+.sidebar-scroll{padding:16px;flex:1;min-height:0}
+.studio-tab-content{gap:13px}
+.editor-kind-fields[hidden],.holo-controls[hidden],.studio-tab-content[hidden]{display:none!important}
+.editor-kind-fields{display:flex;flex-direction:column;gap:12px}
+.mobile-editor-toggle{display:none;border:1px solid #356279;background:#102e44;color:#e2f8ff;border-radius:6px;min-height:36px;padding:7px 12px;font-size:.8rem;font-weight:700;cursor:pointer}
+.help-panel{background:#0a273a;border:1px solid #2c526b;padding:13px;border-radius:7px;display:flex;flex-direction:column;gap:5px}
+.help-panel strong{font-size:.77rem;color:#bbf5ff}
+.help-panel p{margin:0;color:#a1c2d0;font-size:.74rem;line-height:1.7}
+.range-line{display:grid;grid-template-columns:minmax(0,1fr) 83px;align-items:center;gap:10px}
+.range-line input[type="number"]{width:100%;min-width:0;border:1px solid #2e5268;background:#071725;border-radius:6px;color:#e4faff;padding:8px;font-size:.78rem;font-family:inherit}
+.field output{color:#91edff}
+.editor-kind-fields .field>span{display:flex;justify-content:space-between;align-items:center}
+.advanced-export{border:1px solid #2e5268;border-radius:7px;padding:11px}
+.advanced-export summary{color:#a9cfdb;cursor:pointer;font-size:.74rem;font-weight:700}
+.advanced-export button{margin-top:12px}
+.advanced-export .help-copy{margin-top:8px}
+.step-next{margin-top:6px}
+.studio-page .site-footer{margin-top:20px}
+#generated-source{min-height:160px;font-size:.68rem}
+@media (max-width:1050px){
+  .studio-layout{grid-template-columns:minmax(300px,350px) minmax(0,1fr)}
+  .studio-page{width:calc(100% - 28px)}
+  .studio-tabs button{font-size:.61rem}
+}
+@media (max-width:780px){
+  .studio-layout{display:flex;flex-direction:column;gap:12px}
+  .studio-sidebar{order:0;width:100%;margin:0;height:auto;min-height:0}
+  .map-workspace{order:1;width:100%}
+  .studio-controls:not(.is-collapsed){display:flex;flex-direction:column;min-height:0}
+  .studio-controls.is-collapsed{display:none!important}
+  .mobile-editor-toggle{display:inline-flex;align-items:center;gap:9px}
+  .sidebar-heading{min-height:54px}
+  .sidebar-scroll{max-height:min(66vh,650px);overflow-y:auto;padding:15px}
+  .studio-tabs button{font-size:.66rem;padding:13px 2px}
+  .studio-header .lead{line-height:1.55}
+  .workspace-label{height:35px}
+  .studio-version{display:none}
+}
+@media (max-width:380px){
+  .studio-page{width:calc(100% - 18px)}
+  .coordinate-row{gap:7px}
+  .studio-tabs button{font-size:.6rem}
+}
+
+/* ズーム3段階の表示サイズは横並びにし、狭い幅では折り返す。 */
+.zoom-size-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media(max-width:430px){.zoom-size-grid{grid-template-columns:1fr}}
+

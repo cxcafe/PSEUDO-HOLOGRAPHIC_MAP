@@ -1,0 +1,432 @@
+:root {
+  color-scheme: dark;
+  --page-bg: #07101c;
+  --page-text: #e4f6fc;
+  --accent: #69ecff;
+  --accent-soft: rgba(105, 236, 255, .1);
+  --panel-bg: rgba(6, 25, 42, .94);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  background: var(--page-bg);
+  color: var(--page-text);
+  font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+  line-height: 1.65;
+}
+.page {
+  width: min(1100px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: clamp(24px, 5vw, 60px) 0 44px;
+}
+.eyebrow {
+  color: var(--accent);
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .20em;
+  margin: 0 0 8px;
+}
+h1 { margin: 0; font-size: clamp(1.45rem, 3vw, 2.35rem); line-height: 1.35; }
+.lead { margin: 12px 0 26px; color: #9ab5c4; font-size: .94rem; }
+
+#holo-map-shell {
+  --zoom-divider-color: rgba(105,236,255,.4);
+  --control-icon-color: #69ecff;
+  --control-button-size: 44px;
+  --card-width: 30%;
+  --card-max-height: 55%;
+  --card-padding: 1.5%;
+  --card-font-size: 14px;
+  --title-font-size: 1.25em;
+  --address-font-size: 1em;
+  --link-font-size: .95em;
+  --card-top: 10px;
+  --card-left: 10px;
+
+  position: relative;
+  height: var(--map-height, 480px);
+  width: 100%;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(105, 236, 255, .55);
+  border-radius: 10px;
+  background: #071c2a;
+  box-shadow: 0 0 0 1px rgba(105,236,255,.08), 0 20px 50px rgba(0,0,0,.36);
+}
+#holo-map { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* 3Dピンを地図の建物より手前に描画する専用の透過キャンバス。 */
+#holo-map canvas.holo-three-overlay {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  background: transparent;
+}
+#holo-map canvas.holo-three-overlay[hidden] { display: none; }
+/* 地図の標準UIとマーカーの操作を維持する。 */
+#holo-map .maplibregl-ctrl-top-left,
+#holo-map .maplibregl-ctrl-top-right,
+#holo-map .maplibregl-ctrl-bottom-left,
+#holo-map .maplibregl-ctrl-bottom-right { z-index: 2; }
+
+/* 装飾レイヤーが地図のドラッグやズーム操作を妨げないようにする。 */
+#holo-map-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, rgba(110,239,255,.027) 0, rgba(110,239,255,.027) 1px, transparent 1px, transparent 5px),
+    radial-gradient(ellipse at 55% 55%, transparent 30%, rgba(0,15,26,.23) 100%);
+}
+.corner {
+  position: absolute;
+  z-index: 8;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+  border-color: var(--accent);
+  border-style: solid;
+  filter: drop-shadow(0 0 5px rgba(105,236,255,.6));
+}
+.corner.tl { top: 6px; left: 6px; border-width: 2px 0 0 2px; }
+.corner.tr { top: 6px; right: 6px; border-width: 2px 2px 0 0; }
+.corner.bl { bottom: 6px; left: 6px; border-width: 0 0 2px 2px; }
+.corner.br { bottom: 6px; right: 6px; border-width: 0 2px 2px 0; }
+#holo-place-card {
+  position: absolute;
+  top: var(--card-top);
+  left: var(--card-left);
+  z-index: 9;
+  width: var(--card-width);
+  max-width: var(--card-width);
+  min-width: 0;
+  height: auto;
+  max-height: var(--card-max-height);
+  margin: 0;
+  padding: var(--card-padding);
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  border: 1px solid rgba(105,236,255,.53);
+  border-radius: 5px;
+  background: var(--panel-bg);
+  box-shadow: 0 5px 24px rgba(0,0,0,.35);
+  color: var(--page-text);
+  font-size: var(--card-font-size);
+  line-height: 1.45;
+}
+#holo-place-card .card-close-button {
+  display: flex;
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid rgba(105,236,255,.53);
+  border-radius: 4px;
+  background: rgba(4,30,43,.92);
+  color: var(--accent);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+#holo-place-card .card-close-button:hover,
+#holo-place-card .card-close-button:focus-visible {
+  background: rgba(105,236,255,.2);
+}
+#holo-place-card .card-label {
+  padding-right: 38px;
+  font-size: .62em;
+  font-weight: 700;
+  letter-spacing: .18em;
+  color: var(--accent);
+  margin: 0 0 .55em;
+}
+#holo-place-card h2 {
+  margin: 0 0 .5em;
+  padding: 0;
+  color: #f0fcff;
+  font-size: var(--title-font-size);
+  line-height: 1.35;
+  font-weight: 700;
+}
+#holo-place-card p {
+  margin: 0 0 .75em;
+  padding: 0;
+  color: #b7ced9;
+  font-size: var(--address-font-size);
+  line-height: 1.5;
+}
+#holo-place-card a {
+  display: inline-block;
+  padding: .45em .8em;
+  margin: 0;
+  border: 1px solid rgba(105,236,255,.65);
+  border-radius: 3px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  text-decoration: none;
+  font-size: var(--link-font-size);
+  line-height: 1.4;
+}
+#holo-place-card a:hover,
+#holo-place-card a:focus-visible { background: rgba(105,236,255,.28); }
+#holo-place-card:not(.is-open) { display: none; }
+#holo-place-card.is-highlighted { animation: card-pulse .6s ease-out; }
+@keyframes card-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(105,236,255,.7); }
+  100% { box-shadow: 0 0 0 16px rgba(105,236,255,0); }
+}
+/* 3Dマーカーは見えない選択領域、画像マーカーは透過PNG/SVG等を表示。 */
+.holo-marker-3d {
+  display: block;
+  width: 68px;
+  height: 86px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+}
+.holo-marker-3d:focus-visible {
+  outline: 2px solid #c9ffff;
+  outline-offset: -2px;
+  background: rgba(105,236,255,.12);
+}
+/* 画像マーカーだけのスタイル。背景や台座は付けず、元画像の透過を保持。 */
+.holo-marker-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+}
+.holo-marker-image img {
+  display: block;
+  object-fit: contain;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+}
+.holo-marker-image:focus-visible {
+  outline: 2px solid #c9ffff;
+  outline-offset: 2px;
+}
+.holo-settings label { display:inline-flex; align-items:center; gap:4px; font-size:.74rem; color:#bfdeec; white-space:nowrap; }
+.holo-settings output { color: #69ecff; min-width:32px; text-align:right; font-variant-numeric:tabular-nums; }
+.holo-settings input[type="range"] { width:84px; accent-color:#69ecff; cursor:pointer; }
+@media(max-width:600px){.holo-settings input[type="range"] { width:65px; }}
+.map-hud {
+  position: absolute;
+  top: 10px;
+  right: 68px;
+  z-index: 8;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-height: 46px;
+  padding: 5px 8px;
+  border: 1px solid rgba(105,236,255,.33);
+  border-radius: 3px;
+  color: var(--accent);
+  background: rgba(2,16,30,.86);
+  font: 11px/1.3 ui-monospace, SFMono-Regular, Consolas, monospace;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.map-hud span + span { padding-left: 7px; border-left: 1px solid rgba(105,236,255,.3); }
+#map-status {
+  position: absolute; inset: 0; z-index: 2;
+  display: grid; place-items: center;
+  color: var(--accent);
+  pointer-events: none;
+  font-size: .8rem;
+  letter-spacing: .07em;
+}
+#map-status[hidden] { display: none; }
+/* 画像マーカーの透明領域が重なっても操作ボタンを優先する。 */
+#holo-map-shell .maplibregl-ctrl-top-right {
+  z-index: 1000;
+}
+#holo-map-shell .maplibregl-ctrl-group {
+  width: calc(var(--control-button-size) + 2px);
+  overflow: hidden;
+  background: rgba(4, 30, 43, .92);
+  border: 1px solid rgba(105,236,255,.4);
+  border-radius: 4px;
+  box-shadow: none;
+}
+#holo-map-shell .maplibregl-ctrl-group button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: var(--control-button-size);
+  min-height: var(--control-button-size);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--control-icon-color);
+  filter: none;
+  line-height: 1;
+}
+#holo-map-shell .maplibregl-ctrl-group button:hover:not(:disabled) {
+  background: rgba(105, 236, 255, .12);
+}
+#holo-map-shell .maplibregl-ctrl-zoom-in:not(:disabled) .maplibregl-ctrl-icon,
+#holo-map-shell .maplibregl-ctrl-zoom-out:not(:disabled) .maplibregl-ctrl-icon {
+  filter: brightness(0) saturate(100%) invert(85%) sepia(40%) saturate(700%) hue-rotate(145deg);
+}
+#holo-map-shell .maplibregl-ctrl-zoom-in:disabled .maplibregl-ctrl-icon,
+#holo-map-shell .maplibregl-ctrl-zoom-out:disabled .maplibregl-ctrl-icon {
+  filter: grayscale(1) brightness(0) invert(70%);
+  opacity: .3;
+}
+#holo-map-shell .maplibregl-ctrl-group button.maplibregl-ctrl-zoom-out {
+  border-top: 1px solid var(--zoom-divider-color);
+}
+#holo-map-shell .maplibregl-ctrl-group button.holo-reset-button {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+#holo-map-shell .maplibregl-ctrl-scale {
+  color: #d8f8ff;
+  background: rgba(4, 30, 43, .85);
+  border-color: var(--accent);
+}
+
+.note { color: #8ca8b8; font-size: .80rem; margin: 13px 0 0; }
+.note a { color: #8feeff; }
+.site-footer { margin-top: 24px; color: #8ca8b8; font-size: .75rem; }
+.site-footer a { color: #8feeff; }
+
+@media (max-width: 1024px) {
+  #holo-place-card {
+    top: auto;
+    bottom: 12px;
+    left: 12px;
+    width: min(420px, calc(100% - 24px));
+    max-width: calc(100% - 24px);
+    max-height: calc(100% - 24px);
+    padding: 14px;
+  }
+}
+@media (max-width: 600px) {
+  #holo-place-card { width: calc(100% - 24px); }
+  .map-hud {
+    gap: 3px;
+    padding: 4px 5px;
+    font-size: 9px;
+  }
+  .map-hud span + span { padding-left: 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #holo-place-card.is-highlighted { animation: none; }
+}
+
+
+/* -------------------------------------------------------------
+ * 地図スタイル連動UI：地図レイヤーとジェネレーター編集パネルを分離。
+ * Positron = 白・灰／Dark = 暗色ホログラムUI。
+ * 3Dホログラム自体の発光色・透過率には影響しません。
+ * ------------------------------------------------------------- */
+#holo-map-shell[data-map-theme="positron"] {
+  --accent: #4f6579;
+  --accent-soft: rgba(31, 119, 234, .10);
+  --page-text: #202124;
+  --panel-bg: #ffffff;
+  --control-icon-color: #2a2e34;
+  --zoom-divider-color: #d2d7dd;
+  border-color: #d3d9e0;
+  background: #f2f4f5;
+  box-shadow: 0 5px 24px rgba(35, 47, 58, .14);
+}
+#holo-map-shell[data-map-theme="positron"]::after { background: none; }
+#holo-map-shell[data-map-theme="positron"] .corner {
+  border-color: #8d98a4;
+  filter: none;
+  opacity: .45;
+}
+#holo-map-shell[data-map-theme="positron"] #holo-place-card {
+  background: #fff;
+  color: #202124;
+  border: 1px solid #e1e4e8;
+  box-shadow: 0 4px 24px rgba(24, 38, 55, .22);
+}
+#holo-map-shell[data-map-theme="positron"] #holo-place-card h2 { color: #202124; }
+#holo-map-shell[data-map-theme="positron"] #holo-place-card p { color: #64686e; }
+#holo-map-shell[data-map-theme="positron"] #holo-place-card .card-label { color: #75808b; }
+#holo-map-shell[data-map-theme="positron"] #holo-place-card a {
+  background: #2376e8;
+  border-color: #2376e8;
+  color: #fff;
+}
+#holo-map-shell[data-map-theme="positron"] #holo-place-card a:hover,
+#holo-map-shell[data-map-theme="positron"] #holo-place-card a:focus-visible { background: #155dc5; }
+#holo-map-shell[data-map-theme="positron"] #holo-place-card .card-close-button {
+  background: #f5f6f7;
+  border-color: #d6dbe0;
+  color: #3f4650;
+}
+#holo-map-shell[data-map-theme="positron"] #holo-place-card .card-close-button:hover,
+#holo-map-shell[data-map-theme="positron"] #holo-place-card .card-close-button:focus-visible { background: #e9edf1; }
+#holo-map-shell[data-map-theme="positron"] .map-hud {
+  background: rgba(255,255,255,.94);
+  color: #4d5863;
+  border-color: #d6dbe0;
+}
+#holo-map-shell[data-map-theme="positron"] .map-hud span + span { border-left-color: #d6dbe0; }
+#holo-map-shell[data-map-theme="positron"] #map-status { color: #485765; }
+#holo-map-shell[data-map-theme="positron"] .maplibregl-ctrl-group {
+  background: rgba(255,255,255,.98);
+  border-color: #d2d7dd;
+}
+#holo-map-shell[data-map-theme="positron"] .maplibregl-ctrl-group button { color: #2a2e34; }
+#holo-map-shell[data-map-theme="positron"] .maplibregl-ctrl-group button:hover:not(:disabled) {
+  background: #eef1f4;
+}
+#holo-map-shell[data-map-theme="positron"] .maplibregl-ctrl-zoom-in:not(:disabled) .maplibregl-ctrl-icon,
+#holo-map-shell[data-map-theme="positron"] .maplibregl-ctrl-zoom-out:not(:disabled) .maplibregl-ctrl-icon {
+  filter: brightness(0) opacity(.85);
+}
+#holo-map-shell[data-map-theme="positron"] .maplibregl-ctrl-scale {
+  background: rgba(255,255,255,.86);
+  color: #31363b;
+  border-color: #31363b;
+}
+/* MapLibre本体が生成するPopupも、独自の位置カードと同じ配色に。 */
+#holo-map-shell[data-map-theme="positron"] .maplibregl-popup-content {
+  background: #fff;
+  color: #24282d;
+  box-shadow: 0 3px 15px rgba(24,38,55,.2);
+}
+#holo-map-shell[data-map-theme="positron"] .maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color: #fff; }
+#holo-map-shell[data-map-theme="positron"] .maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color: #fff; }
+#holo-map-shell[data-map-theme="positron"] .maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: #fff; }
+#holo-map-shell[data-map-theme="positron"] .maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: #fff; }
+#holo-map-shell[data-map-theme="dark"] .maplibregl-popup-content { background: #06192a; color: #e4f6fc; }
+#holo-map-shell[data-map-theme="dark"] .maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color: #06192a; }
+#holo-map-shell[data-map-theme="dark"] .maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color: #06192a; }
+#holo-map-shell[data-map-theme="dark"] .maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: #06192a; }
+#holo-map-shell[data-map-theme="dark"] .maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: #06192a; }
+#holo-map-shell[data-map-theme="dark"] .maplibregl-ctrl-attrib { color: #d7e8f2; background: rgba(7,19,31,.85); }
+#holo-map-shell[data-map-theme="dark"] .maplibregl-ctrl-attrib a { color: #a4dffc; }
+#holo-map-shell[data-map-theme="positron"] .maplibregl-ctrl-attrib { color: #3f4650; background: rgba(255,255,255,.87); }
+#holo-map-shell[data-map-theme="positron"] .maplibregl-ctrl-attrib a { color: #41566c; }
