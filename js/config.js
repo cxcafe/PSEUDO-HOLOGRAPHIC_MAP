@@ -1,4 +1,6 @@
 // ジェネレーターの初期設定です。ジェネレーター専用です。生成コードには設定値のみを埋め込みます。
+// 起動時のキャッシュ更新キー。素材差し替え後の再読込で最新ファイルを取得します。
+const holoStandardAssetRevision = '?v=' + Date.now();
 window.HOLO_SETTINGS = {
     map: { // 地図の初期設定
       styles: {
@@ -25,11 +27,14 @@ window.HOLO_SETTINGS = {
       animationDuration: 650
     },
 
-    // 標準素材のファイルパスはプレビュー用。EXPORTは内包済みデータから1種類を選びます。
+    // 標準素材の唯一の参照元。プレビューとEXPORTは同じファイルを読み込みます。
     standardAssets: {
-      pin: './models/standard-pin.glb',
-      building: './models/standard-building.glb',
-      image: './images/pin.png'
+      pin: './models/pin-marker_x10units.glb' + holoStandardAssetRevision,
+      building: './models/pin-building_x10units.glb' + holoStandardAssetRevision,
+      magic: './models/pin-magic-circle_x10units.glb' + holoStandardAssetRevision,
+      png: './images/pin-marker.png' + holoStandardAssetRevision,
+      svg: './images/pin-marker.svg' + holoStandardAssetRevision,
+      webp: './images/pin-marker.webp' + holoStandardAssetRevision
     },
     // EXPORTの独自素材パスが空欄のときに出力する仮の相対パス。
     placeholderAssets: {
@@ -39,7 +44,7 @@ window.HOLO_SETTINGS = {
 
     // 1ピン固定の設定（MARKERS タブから位置・種類・素材を編集できます）。
     // type:'3d' は Three.js、type:'image' は透過画像。
-    // zoomSizesPercent: ZOOM 15 / 16 / 17 での表示比率（%）。画像は元画像100%、3Dはモデルの基準寸法100%。
+    // GLBと画像は倍率・ZOOM別表示比率を別々に保持します。
     // 3D の rotation はモデルの方位角、holoTransparency はこのピンだけの透過率。
     // 表示比率はZOOMごとに指定し、ピンの地理座標は固定します。
     pins: [
@@ -48,9 +53,10 @@ window.HOLO_SETTINGS = {
         name: '六本木ヒルズ',
         address: '〒106-6108 東京都港区六本木6-10-1',
         lng: 139.7292361, lat: 35.6603972,
-        model: 'pin', color: '#69ecff', scale: 8, rotation: 0, altitude: 1,
-        holoTransparency: 78, zoomSizesPercent: {15: 50, 16: 100, 17: 150},
-        imageMode: 'standard', image: './images/your-image.png', imageOpacity: 1
+        model: 'pin', color: '#69ecff', scale: 10, rotation: 0, altitude: 1,
+        holoTransparency: 50, zoomSizesPercent: {15: 100, 16: 100, 17: 100},
+        imageMode: 'png', image: './images/your-image.png', imageOpacity: 1,
+        imageScale: 1, imageZoomSizesPercent: {15: 50, 16: 75, 17: 100}
       }
     ]
   };

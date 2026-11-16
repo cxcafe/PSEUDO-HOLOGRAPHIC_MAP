@@ -23,8 +23,10 @@
       if (!(w > 0) || !(h > 0)) return false;
       const percent = percentAtZoom(point.zoomSizesPercent, getZoom());
       if (!(percent > 0) || !Number.isFinite(percent)) return false;
-      const width = w * percent / 100;
-      const height = h * percent / 100;
+      const multiplier = Number(point.imageScale ?? 1);
+      if (!(multiplier > 0) || !Number.isFinite(multiplier)) return false;
+      const width = w * multiplier * percent / 100;
+      const height = h * multiplier * percent / 100;
       // DOMの表示サイズを直接確定する。imgのwidth/height属性やCSSのmax-widthに依存しない。
       if (width !== lastWidth || height !== lastHeight){
         element.style.width = width + 'px';

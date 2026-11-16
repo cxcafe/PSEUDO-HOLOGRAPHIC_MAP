@@ -239,14 +239,14 @@ const SETTINGS = {
     lat: 35.6603972
   },
   model: {
-    glbUrl: './wp-content/uploads/open-office-demo.glb', // HTMLを設置したサイト内の相対パス
-    baseMaxSideMeters: 10,
-    scale: 8,                     // 基準寸法倍率：0.05～30倍
+    glbUrl: './models/your-model.glb', // HTMLを設置したサイト内の相対パス
+    baseWidthMeters: 10,
+    scale: 10,                     // 基準寸法倍率：0.05～30倍
     color: '#69ecff',             // モデルのホログラム色
-    transparencyPercent: 78,     // 0％＝不透明、95％＝透過
+    transparencyPercent: 50,     // 0％＝不透明、95％＝透過
     rotationDegrees: 0,          // モデルの回転角
     altitudeMeters: 1,           // 地面からの高さ（m）
-    zoomSizesPercent: { 15: 50, 16: 100, 17: 150 }
+    zoomSizesPercent: { 15: 100, 16: 100, 17: 100 }
   },
   map: {
     style: 'dark',             // 'dark' または 'positron'
@@ -410,9 +410,8 @@ map.on('load', async () => {
     const bounds = new THREE.Box3().setFromObject(model);
     if (bounds.isEmpty()) throw new Error('GLB内に表示可能なメッシュがありません');
     const size = bounds.getSize(new THREE.Vector3());
-    const maxSide = Math.max(size.x, size.y, size.z);
-    if (!(maxSide > 0) || !Number.isFinite(maxSide)) throw new Error('モデルの寸法が不正です');
-    const factor = modelSettings.baseMaxSideMeters / maxSide;
+    if (!(size.x > 0) || !Number.isFinite(size.x)) throw new Error('モデルの横幅が不正です');
+    const factor = modelSettings.baseWidthMeters / size.x;
     const center = bounds.getCenter(new THREE.Vector3());
     model.scale.multiplyScalar(factor);
     model.position.set(-center.x * factor, -bounds.min.y * factor, -center.z * factor);
@@ -424,12 +423,13 @@ map.on('load', async () => {
       child.frustumCulled = false;
       child.renderOrder = 1;
       const applyHoloMaterial = original => {
+        // 元の材質を複製して頂点アルファ・材質表現を維持する。
         const material = original.clone();
         if (material.color) material.color.copy(tint);
         if (material.emissive) material.emissive.copy(tint);
         if ('emissiveIntensity' in material) material.emissiveIntensity = .28;
         material.transparent = true;
-        material.opacity = opacity;
+        material.opacity = opacity * Number(original.opacity ?? 1);
         material.depthWrite = false;
         material.depthTest = true;
         material.side = THREE.DoubleSide;
@@ -488,8 +488,9 @@ map.on('load', async () => {
       onAdd(mapInstance) {
         this.camera = new THREE.Camera();
         this.scene = new THREE.Scene();
-        this.scene.add(new THREE.HemisphereLight(0xd5ffff, 0x183b48, 1.2));
-        const sun = new THREE.DirectionalLight(0xc4fdff, 1.1);
+        // v1.6の立体的な材質表現を維持し、指定色に干渉しない白色光で照らす。
+        this.scene.add(new THREE.HemisphereLight(0xffffff, 0x404040, 1.2));
+        const sun = new THREE.DirectionalLight(0xffffff, 1.1);
         sun.position.set(18, 35, 15);
         this.scene.add(sun, holder);
         overlayCanvas = document.createElement('canvas');

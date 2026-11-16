@@ -1,18 +1,23 @@
 /* PSEUDO-HOLOGRAPHIC MAP — EXPORT
- * 標準素材は選択した1ファイルだけ内包。独自素材はEXPORTのパスを参照する。
+ * 標準素材はmodels/・images/の実ファイルから読み込み、生成時に選択した1種類だけ内包する。
+ * 独自素材はEXPORTのパスを参照する。
  */
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
   const editor = window.__holoEditorDiagnostics;
-  const embeddedAssets = window.HOLO_STANDARD_EMBEDDED_ASSETS;
+  const standardAssets = editor?.draft?.standardAssets;
+  const sampleMimeTypes = Object.freeze({
+    pin: 'model/gltf-binary', building: 'model/gltf-binary', magic: 'model/gltf-binary',
+    png: 'image/png', svg: 'image/svg+xml', webp: 'image/webp'
+  });
   // 生成コードのテンプレートをファイルから読み込む。
   const templateFiles = Object.freeze({
     image: './templates/MAP_code_png.html',
     glb: './templates/MAP_code_glb.html'
   });
   const templateCache = new Map();
-  if (!editor || !embeddedAssets) {
+  if (!editor || !standardAssets) {
     if ($('editor-status-message')) {
       $('editor-status-message').textContent = 'EXPORTを初期化できませんでした。';
       $('editor-status').classList.add('is-error');
@@ -20,7 +25,8 @@
     return;
   }
   const placeholders = editor.draft.placeholderAssets;
-  const builtins = ['pin', 'building'];
+  const builtins = ['pin', 'building', 'magic'];
+  const builtinImages = ['png', 'svg', 'webp'];
   const field = $('publish-model-url');
   const exportPaths = { image: '', glb: '' };
   const status = (message, error = false) => {
@@ -73,16 +79,17 @@
       buildingColorPositron: map.buildingColors.positron,
       defaultBuildingHeight: map.defaultBuildingHeight
     };
+    const activeZoom = marker.type === 'image' ? marker.imageZoomSizesPercent : marker.zoomSizesPercent;
     const zoomSizesPercent = {
-      15: marker.zoomSizesPercent[15],
-      16: marker.zoomSizesPercent[16],
-      17: marker.zoomSizesPercent[17]
+      15: activeZoom[15],
+      16: activeZoom[16],
+      17: activeZoom[17]
     };
     if (marker.type === 'image') {
-      const standard = marker.imageMode === 'standard';
+      const standard = builtinImages.includes(marker.imageMode);
       return {
         kind: 'image',
-        assetKey: standard ? 'image' : null,
+        assetKey: standard ? marker.imageMode : null,
         config: {
           location,
           marker: {
@@ -93,6 +100,7 @@
             offsetX: marker.imageOffsetX,
             offsetY: marker.imageOffsetY,
             transparencyPercent: Math.round((1 - marker.imageOpacity) * 100),
+            scale: marker.imageScale,
             zoomSizesPercent
           },
           map: mapSettings
@@ -101,8 +109,7 @@
     }
     if (marker.type === '3d') {
       const standard = builtins.includes(marker.model);
-      const baseMaxSideMeters = marker.model === 'pin' ? 24
-        : marker.model === 'building' ? 13.92 : 10;
+      const baseWidthMeters = 10;
       return {
         kind: 'glb',
         assetKey: standard ? marker.model : null,
@@ -110,7 +117,7 @@
           location,
           model: {
             glbUrl: standard ? '' : (exportPaths.glb.trim() || placeholders.glb),
-            baseMaxSideMeters,
+            baseWidthMeters,
             scale: marker.scale,
             color: marker.color,
             transparencyPercent: marker.holoTransparency,
@@ -132,7 +139,7 @@
   async function loadTemplate(kind) {
     if (!templateFiles[kind]) throw new Error('書き出し形式が不正です。');
     if (templateCache.has(kind)) return templateCache.get(kind);
-    const response = await fetch(templateFiles[kind]);
+    const response = await fetch(templateFiles[kind], {cache:'no-store'});
     if (!response.ok) throw new Error('テンプレートを読み込めません（' + response.status + '）：' + templateFiles[kind]);
     const text = await response.text();
     // 開始・終了コメントで設定領域を特定する。
@@ -157,6 +164,39 @@
       throw new Error('テンプレートの設定部分を確認できませんでした。');
     }
     return source.slice(0, start) + '\nconst SETTINGS = ' + safeJson(config) + ';\n' + source.slice(finish);
+  }
+
+  // 標準素材はディレクトリ内のファイルを唯一の元データとする。
+  // 生成時に最新のバイナリを読み込み、Webサイトへ貼るコードにだけ埋め込む。
+  async function embedStandardAsset(key) {
+    const filePath = standardAssets[key];
+    const mimeType = sampleMimeTypes[key];
+    if (!filePath || !mimeType) throw new Error('標準素材の設定が見つかりません：' + key);
+
+    const response = await fetch(filePath, { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error('標準素材を読み込めません（' + response.status + '）：' + filePath);
+    }
+    const buffer = await response.arrayBuffer();
+    if (!buffer.byteLength) throw new Error('標準素材のファイルが空です：' + filePath);
+    if (mimeType === 'model/gltf-binary') {
+      // 誤ったGLBに差し替えた場合、生成前に形式エラーを知らせる。
+      if (buffer.byteLength < 12) throw new Error('GLB 2.0形式ではありません：' + filePath);
+      const header = new DataView(buffer);
+      if (header.getUint32(0, true) !== 0x46546c67 ||
+          header.getUint32(4, true) !== 2 ||
+          header.getUint32(8, true) !== buffer.byteLength) {
+        throw new Error('GLB 2.0形式ではありません：' + filePath);
+      }
+    }
+    // ファイル内容を変更せずにデータURIへ変換。SVG等の文字化けも防ぐ。
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => typeof reader.result === 'string'
+        ? resolve(reader.result) : reject(new Error('素材の変換に失敗しました：' + filePath));
+      reader.onerror = () => reject(new Error('素材を変換できません：' + filePath));
+      reader.readAsDataURL(new Blob([buffer], { type: mimeType }));
+    });
   }
 
   let latest = '';
@@ -209,8 +249,7 @@
       const {kind, config, assetKey} = configForExport();
       const startingFingerprint = fingerprint();
       if (assetKey) {
-        const url = embeddedAssets[assetKey];
-        if (!url) throw new Error('標準素材の内包データが見つかりません：' + assetKey);
+        const url = await embedStandardAsset(assetKey);
         if (kind === 'image') config.marker.iconUrl = url;
         else config.model.glbUrl = url;
       }

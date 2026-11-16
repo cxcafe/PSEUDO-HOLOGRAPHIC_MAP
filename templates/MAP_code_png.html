@@ -230,14 +230,15 @@ const SETTINGS = {
     lat: 35.6603972
   },
   marker: {
-    iconUrl: './wp-content/uploads/map-pin.png',
+    iconUrl: './images/your-image.png',
     width: 256,
     height: 128,
     anchor: 'bottom',             // 'bottom'（下端中央）または 'center'（中心）
     offsetX: 0,                  // 左右位置調整（px）
     offsetY: 0,                  // 上下位置調整（px）
     transparencyPercent: 0,      // 透過率：0％＝不透明、100％＝透明
-    zoomSizesPercent: { 15: 50, 16: 100, 17: 150 }
+    scale: 1,
+    zoomSizesPercent: { 15: 50, 16: 75, 17: 100 }
   },
   map: {
     style: 'dark',             // 'dark' または 'positron'
@@ -404,7 +405,7 @@ function updateMarkerSize() {
   const high = Math.min(17, low + 1);
   const percentages = markerSettings.zoomSizesPercent;
   const percentage = percentages[low] + (percentages[high] - percentages[low]) * (z - low);
-  const scale = percentage / 100;
+  const scale = (markerSettings.scale ?? 1) * percentage / 100;
   const w = baseImageWidth * scale;
   const h = baseImageHeight * scale;
   markerButton.style.width = image.style.width = w + 'px';

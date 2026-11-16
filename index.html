@@ -6,8 +6,8 @@
   <meta name="description" content="擬似ホログラム風マップの表示設定と埋め込みコード生成。">
   <title>PSEUDO-HOLOGRAPHIC MAP | 擬似ホログラム風マップ</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.16.0/dist/maplibre-gl.css">
-  <link rel="stylesheet" href="./css/style.css?v=20261109">
-  <link rel="stylesheet" href="./css/studio.css?v=20261109">
+  <link rel="stylesheet" href="./css/style.css?v=20261115v17">
+  <link rel="stylesheet" href="./css/studio.css?v=20261115v17">
 </head>
 <body>
 <main class="page studio-page">
@@ -15,7 +15,7 @@
     <div>
       <p class="eyebrow">INTERACTIVE MAP GENERATOR</p>
       <h1>PSEUDO-HOLOGRAPHIC MAP</h1>
-      <p class="lead">「MapLibre」を使用したホログラム風3Dマップの生成ツールです。</p>
+      <p class="lead">MapLibreを使用したホログラム風マップの生成ジェネレーターです。</p>
     </div>
     <span class="studio-version">GENERATOR / PREVIEW</span>
   </header>
@@ -33,60 +33,59 @@
       </nav>
       <div class="sidebar-scroll">
         <section class="studio-tab-content is-active" id="studio-style" role="tabpanel">
-          <div class="section-heading"><h2>MAP STYLE — 地図全体</h2><p>地図の外観と表示高さを設定します。</p></div>
+          <div class="section-heading"><h2>MAP STYLE ｜ 地図全体</h2><p>地図の外観スタイルと表示サイズを設定します。</p></div>
           <div class="style-buttons"><button type="button" data-map-style="dark" aria-pressed="true" disabled>Dark</button><button type="button" data-map-style="positron" aria-pressed="false" disabled>Positron</button></div>
           <label class="field"><span>地図の高さ（px）</span><input id="edit-map-height" type="number" min="260" max="1100" step="10"></label>
-          <p class="help-copy">設定画面では地図と編集パネルの高さを揃えます。埋め込み先の地図にもこの高さが適用されます。</p>
-          <div class="help-panel"><strong>地図の表示角度</strong><p>初期設定：ズーム16／傾斜60°／地図回転 -45°。3Dモデルの「回転角」は地図全体ではなく、個々のモデルの設置方向です。</p></div>
+          <div class="help-panel"><strong>地図の表示</strong><p>ズームは3段階（15・16・17）です。そして、ピンの所在地をポップ表示しています。<br>■ 初期設定：ズーム16／傾斜60°／地図回転 -45°</p></div>
         </section>
         <section class="studio-tab-content" id="studio-markers" role="tabpanel" hidden>
-          <div class="section-heading"><h2>MARKERS — 1ピンの設定</h2><p>ピンは1つに固定されています。位置・モデル・画像・向き・透明度・ズーム時の表示比率（％）を変更できます。</p></div>
-          <div class="field-grid">
-            <label class="field"><span>名前</span><input id="edit-name" maxlength="100" placeholder="例：六本木ヒルズ"></label>
-            <label class="field"><span>住所（説明用）</span><div class="editor-actions"><input id="edit-address" maxlength="300">
-            <button type="button" class="soft-btn" id="address-search">座標を検索</button></div></label>
-          </div>
+          <div class="section-heading"><h2>MARKERS ｜ ピンの設定</h2><p>緯度と経度を指定してください。（ピンは1つです）</p></div>
           <div class="coordinate-row">
             <label class="field"><span>緯度</span><input id="edit-lat" type="number" min="-85" max="85" step="any"></label>
             <label class="field"><span>経度</span><input id="edit-lng" type="number" min="-180" max="180" step="any"></label>
           </div>
+          <div class="field-grid">
+            <label class="field"><span>名前（説明欄）</span><input id="edit-name" maxlength="100" placeholder="例：六本木ヒルズ"></label>
+            <label class="field"><span>住所（説明欄）</span><input id="edit-address" maxlength="300"></label>
+          </div>
           <div class="editor-actions"><button type="button" class="primary-btn full-width" id="apply-preview">地図に反映</button><button type="button" class="soft-btn" id="locate-on-map">地図上でクリック</button></div>
+          <p class="help-copy">設定の変更後は「地図に反映」でプレビューを更新します。無効な値は更新されません。</p>
           <div class="editor-separator"></div>
+          <div class="help-panel"><strong>モデルの設定</strong><p>位置・モデル・画像・向き・透明度・ズーム時の表示比率（％）を変更できます。</p></div>
           <label class="field"><span>表示形式</span><select id="edit-type"><option value="3d">3Dオブジェクト</option><option value="image">画像ピン</option></select></label>
           <div id="editor-3d-fields" class="editor-kind-fields">
-            <label class="field"><span>3Dモデル</span><select id="edit-model"><option value="pin">立体ピン（標準マーカー）</option><option value="building">建物ビル（標準マーカー）</option><option value="custom">独自GLBモデル</option></select></label>
-            <label class="upload-field" id="custom-glb-upload" hidden><span>独自GLBファイルを選択</span><input type="file" id="upload-glb" accept=".glb,model/gltf-binary"><small>GLB 2.0形式・25MB以内。ファイル選択はプレビュー用です。</small></label>
-            <div class="field"><span>3Dモデルの基準寸法倍率 <output id="edit-scale-value">1.0×</output></span><div class="range-line"><input id="edit-scale-range" type="range" min="0.05" max="30" step="0.05"><input id="edit-scale" aria-label="オブジェクト倍率の数値" type="number" min="0.05" max="30" step="0.05"></div></div>
-            <div class="field"><span>回転角 <output id="edit-rotation-value">0°</output></span><div class="range-line"><input id="edit-rotation-range" type="range" min="-360" max="360" step="1"><input id="edit-rotation" aria-label="モデルの回転角の数値" type="number" min="-360" max="360" step="1"></div></div>
-            <div class="coordinate-row"><label class="field"><span>ホログラムの色</span><input type="color" id="edit-color"></label><label class="field"><span>地面からの高さ（m）</span><input id="edit-altitude" type="number" step="0.5"></label></div>
+            <label class="field"><span>3Dモデル</span><select id="edit-model"><option value="pin">マップピン（サンプル）</option><option value="building">建物ビル（サンプル）</option><option value="magic">魔法の陣（サンプル）</option><option value="custom">独自GLBモデル</option></select></label>
+            <label class="upload-field" id="custom-glb-upload" hidden><span>独自GLBファイルを選択（プレビュー確認用）</span><input type="file" id="upload-glb" accept=".glb,model/gltf-binary"><small>GLB 2.0形式・10MB以内。<br>これはジェネレーター上の確認用です。外部ファイルはご自身で公開先へアップロードをしてください。</small></label>
+            <div class="field"><span>ベース倍率 <output id="edit-scale-value">1.0×</output></span><div class="range-line"><input id="edit-scale-range" type="range" min="0.05" max="30" step="0.05"><input id="edit-scale" aria-label="オブジェクト倍率の数値" type="number" min="0.05" max="30" step="0.05"></div></div>
+            <div class="field"><span>3Dモデルの向き（回転角） <output id="edit-rotation-value">0°</output></span><div class="range-line"><input id="edit-rotation-range" type="range" min="-360" max="360" step="1"><input id="edit-rotation" aria-label="モデルの回転角の数値" type="number" min="-360" max="360" step="1"></div></div>
             <div class="holo-controls" id="per-pin-holo-fields">
-              <label class="field"><span>この3Dピンの透過率 <output id="holo-opacity-value">78%</output></span><input id="holo-opacity" type="range" min="0" max="95" step="1"></label>
+              <label class="field"><span>3Dモデルの透過率 <output id="holo-opacity-value">50%</output></span><input id="holo-opacity" type="range" min="0" max="95" step="1"></label>
             </div>
-            <p class="help-copy">回転角は地図とは独立した3Dモデルの向きです。モデルの基準寸法は種類により異なります。</p>
+            <div class="coordinate-row"><label class="field"><span>ホログラムの色</span><input type="color" id="edit-color"></label><label class="field"><span>地面からの高さ（m）</span><input id="edit-altitude" type="number" step="0.5"></label></div>
           </div>
           <div id="editor-image-fields" class="editor-kind-fields" hidden>
-            <label class="field"><span>画像マーカー</span><select id="edit-image-mode"><option value="standard">画像ピン（標準）</option><option value="custom">独自画像</option></select></label>
+            <label class="field"><span>画像マーカー</span><select id="edit-image-mode"><option value="png">PNGピン（サンプル）</option><option value="svg">SVGピン（サンプル）</option><option value="webp">WebPピン（サンプル）</option><option value="custom">独自画像</option></select></label>
             <div id="custom-image-wrap" class="editor-kind-fields" hidden>
-              <label class="upload-field"><span>画像ファイルを選択</span><input id="upload-image" type="file" accept=".jpg,.jpeg,.png,.svg,.webp,image/jpeg,image/png,image/svg+xml,image/webp"><small>JPG / PNG / SVG / WebP・25MB以内。ファイル選択はプレビュー用です。</small></label>
+              <label class="upload-field"><span>画像ファイルを選択</span><input id="upload-image" type="file" accept=".png,.svg,.webp,image/png,image/svg+xml,image/webp"><small>PNG / SVG / WebP・10MB以内。ファイル選択はプレビュー用です。</small></label>
             </div>
+            <div class="field"><span>ベース倍率 <output id="edit-image-scale-value">1×</output></span><div class="range-line"><input id="edit-image-scale-range" type="range" min="0.05" max="30" step="0.05"><input id="edit-image-scale" aria-label="画像倍率の数値" type="number" min="0.05" max="30" step="0.05"></div></div>
             <label class="field"><span>画像の透過率 <output id="edit-image-opacity-value">0%</output></span><input id="edit-image-opacity" type="range" min="0" max="100" step="1"></label>
-            <p class="help-copy">画像の表示比率は下のZOOM 15・16・17で％指定します。100％は元画像サイズで、縦横比とピンの基準位置は維持します。0％は指定できません。</p>
             <label class="field"><span>座標に合わせる基準位置</span><select id="edit-image-anchor"><option value="bottom">画像の下端中央（通常のピン）</option><option value="center">画像の中心（アイコン・建物など）</option></select></label>
             <div class="coordinate-row"><label class="field"><span>横方向オフセット（px）</span><input id="edit-image-offset-x" type="number" min="-1000" max="1000" step="1"></label><label class="field"><span>縦方向オフセット（px）</span><input id="edit-image-offset-y" type="number" min="-1000" max="1000" step="1"></label></div>
             <div class="asset-preview"><span>画像プレビュー</span><img alt="選択した画像" id="asset-preview-img"></div>
           </div>
           <div class="editor-separator"></div>
-          <div class="help-panel"><strong>地図のズーム別ピン表示比率</strong><p>ZOOM 15・16・17で表示比率（％）を個別指定します。画像の100％は元画像の大きさ、3Dの100％はモデルの基準寸法倍率を反映した大きさです。ズームの中間では表示比率を補間します。座標と基準位置は変わりません。</p></div>
+          <div class="help-panel"><strong>ズーム別のピン表示比率</strong><p>ZOOM 15・16・17の表示比率（％）を個別指定できます。またズーム間の表示は自動で補間されます。<br>■ 3Dサンプル：ベース1.0×横幅（X軸）10mを基準<br>■ 画像サンプル：ベース1.0×縦256pxを基準</p></div>
           <div class="zoom-size-grid"><label class="field"><span>ZOOM 15（％）</span><input id="edit-zoom-size-15" type="number" min="1" max="500" step="1"></label><label class="field"><span>ZOOM 16（％）</span><input id="edit-zoom-size-16" type="number" min="1" max="500" step="1"></label><label class="field"><span>ZOOM 17（％）</span><input id="edit-zoom-size-17" type="number" min="1" max="500" step="1"></label></div>
           <div class="editor-actions"><button type="button" class="primary-btn" id="apply-preview-details">地図に反映</button><button type="button" class="soft-btn" id="focus-marker">この地点へ移動</button></div>
-          <p class="help-copy">設定の変更後は「地図に反映」でプレビューを更新します。無効な数値では更新されません。</p>
+          <p class="help-copy">設定の変更後は「地図に反映」でプレビューを更新します。無効な値は更新されません。</p>
         </section>
         <section class="studio-tab-content" id="studio-export" role="tabpanel" hidden>
-          <div class="section-heading"><h2>EXPORT — 埋め込みコード生成</h2><p>設定が完了したら最後にコードを生成します。</p></div>
-          <div class="help-panel"><strong>埋め込み方法</strong><p>生成したコードをコピーして、WebページのHTMLに貼り付けます。また、scriptタグが使用できない環境では使用できません。</p></div>
-          <label class="field" id="publish-model-url-field"><span>独自GLB／画像マーカーのパス（任意）</span><input id="publish-model-url" type="text" placeholder="./images/your-image.png"><small>空欄の場合は仮の値が入ります。独自に参照できる相対パスを入力してください。</small></label>
+          <div class="section-heading"><h2>EXPORT ｜ 埋め込みコード生成</h2><p>スタイルとマーカーの設定が完了したら最後に埋め込みコードを生成します。</p></div>
+          <div class="help-panel"><strong>埋め込み方法</strong><p>生成されたソースコードをWebページのHTMLに貼り付けることで地図が表示されます。また、scriptタグが使用できない環境では利用できません。</p></div>
+          <label class="field" id="publish-model-url-field"><span>独自GLB／画像マーカーのパス（任意）</span><input id="publish-model-url" type="text" placeholder="./images/your-image.png"><small>※ 独自に参照できる相対パスを入力してください。（空欄の場合は仮の値が入ります）</small></label>
           <div class="editor-actions"><button type="button" class="primary-btn full-width" id="make-source">埋め込みコードを生成</button><button type="button" class="soft-btn" id="clear-source" disabled>クリア</button></div>
-          <label class="field"><span>Webサイトへ貼るコード</span><textarea id="generated-source" rows="9" spellcheck="false" autocomplete="off" readonly placeholder="設定完了後、上のボタンを押してください。"></textarea></label>
+          <label class="field"><span>▼ 埋め込みコード</span><textarea id="generated-source" rows="9" spellcheck="false" autocomplete="off" readonly placeholder="設定完了後に「生成」ボタンを押してください。"></textarea></label>
           <div class="editor-actions"><button type="button" class="soft-btn full-width" id="copy-source" disabled>生成コードをコピー</button><button type="button" class="soft-btn full-width" id="download-source" disabled>動作確認用HTMLを保存</button></div>
           <p class="help-copy">貼り付けコードだけを収録したHTMLファイルです。ブラウザで動作を確認できます（外部地図・3Dライブラリの通信が必要です）。</p>
         </section>
@@ -116,7 +115,7 @@
     </section>
     </div>
   </div>
-    <footer class="site-footer">Public Version 1.0.0 · <a href="./LICENSE">License</a> · <a href="./THIRD_PARTY_NOTICES.md">Third-party notices</a>　© 2026 ivuno.com</footer>
+    <footer class="site-footer">Public Version 1.0.0 · <a href="../LICENSE">License</a> · <a href="../THIRD_PARTY_NOTICES.md">Third-party notices</a>　© 2026 ivuno.com</footer>
 </main>
 <script>
 (() => {
@@ -137,11 +136,10 @@
 })();
 </script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.181.0/examples/jsm/"}}</script>
-<script src="./js/config.js?v=20261108p1"></script>
-<script defer src="./js/editor.js?v=20261109"></script>
-<script defer src="./js/image-marker-sizing.js?v=20261106d"></script>
-<script defer src="./js/standard-embedded-assets.js"></script>
-<script defer src="./js/app.js?v=20261108p1"></script>
-<script defer src="./js/exporter.js?v=20261109"></script>
+<script src="./js/config.js?v=20261115v17"></script>
+<script defer src="./js/editor.js?v=20261115v17"></script>
+<script defer src="./js/image-marker-sizing.js?v=20261115v17"></script>
+<script defer src="./js/app.js?v=20261115v17"></script>
+<script defer src="./js/exporter.js?v=20261115v17"></script>
 </body>
 </html>

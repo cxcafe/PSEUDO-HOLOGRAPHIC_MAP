@@ -45,17 +45,6 @@ Positronなど、個々のスタイルには独自のデザイン・著作権条
 - データライセンス：Open Database License（ODbL）1.0
 - 著作権・ライセンス：https://www.openstreetmap.org/copyright
 
-## Nominatim（OpenStreetMap Foundationの公開API）
-
-- 用途：MARKERSの「座標を検索」で、入力した住所から緯度・経度を検索
-- サービス：https://nominatim.openstreetmap.org/
-- 公式利用ポリシー：https://operations.osmfoundation.org/policies/nominatim/
-- 関連する地理データ：OpenStreetMap／ODbL
-
-公開APIにはアクセス量、アプリの識別、帰属表示、利用目的などの条件があります。特に、**サイト・アプリ全体で最大毎秒1リクエスト**という制限は、個々のユーザーごとではありません。公開・配布形態によってはこのAPIを利用できない場合があり、別サービスへの切り替えが必要です。自動補完や大量の住所検索は実装していません。
-
-住所検索の入力値は外部のNominatimサーバーに送信されます。個人情報や機密情報の入力は避けてください。
-
 ## 外部配信サービス
 
 MapLibre GL JSはunpkg、Three.jsはjsDelivrから、地図関連データはOpenFreeMapから読み込む構成です。これらのサービスの利用規約や稼働状況にも依存します。

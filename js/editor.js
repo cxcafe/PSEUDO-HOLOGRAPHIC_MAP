@@ -13,17 +13,18 @@
   const selected = draft.pins[0].id;
   let mapReady = false;
   let editingTab = 'style';
-  const builtinModels = ['pin','building'];
+  const builtinModels = ['pin','building','magic'];
+  const builtinImages = ['png','svg','webp'];
   const assets = draft.standardAssets;
   const placeholders = draft.placeholderAssets;
   const notifyAssetChange = () => document.dispatchEvent(new Event('holo-editor:asset-change'));
   // 各マーカー設定の未指定項目に初期値を補完する。
   for (const pin of draft.pins) {
     for (const [key,value] of Object.entries({
-      imageMode:'standard',imageAnchor:'bottom',
+      imageMode:'png',imageScale:1,imageZoomSizesPercent:{15:50,16:75,17:100},imageAnchor:'bottom',
       imageOffsetX:0,imageOffsetY:0,imageOpacity:1,
-      scale:1,rotation:0,altitude:0,holoTransparency:78,
-      zoomSizesPercent:{15:50,16:100,17:150}
+      scale:10,rotation:0,altitude:0,holoTransparency:50,
+      zoomSizesPercent:{15:100,16:100,17:100}
     })) if (pin[key]===undefined) pin[key]=value;
   }
   const uploadedKey = path => uploaded.get(path)?.previewURL || path;
@@ -70,9 +71,9 @@
 
   function renderFields(){
     const p=selectedPin();if(!p)return;
-    const defaults={scale:1,rotation:0,altitude:0,
-      imageMode:'standard',imageAnchor:'bottom',imageOffsetX:0,imageOffsetY:0,imageOpacity:1,
-      holoTransparency:78,zoomSizesPercent:{15:50,16:100,17:150}};
+    const defaults={scale:10,rotation:0,altitude:0,
+      imageMode:'png',imageScale:1,imageZoomSizesPercent:{15:50,16:75,17:100},imageAnchor:'bottom',imageOffsetX:0,imageOffsetY:0,imageOpacity:1,
+      holoTransparency:50,zoomSizesPercent:{15:100,16:100,17:100}};
     for(const [key,value] of Object.entries(defaults))if(p[key]===undefined)p[key]=value;
     for(const [id,key] of [
       ['edit-name','name'],['edit-address','address'],['edit-lat','lat'],['edit-lng','lng'],
@@ -89,7 +90,11 @@
     $('edit-scale-value').textContent=fmt(p.scale)+'×';
     $('edit-rotation-range').value=String(p.rotation);
     $('edit-rotation-value').textContent=fmt(p.rotation)+'°';
-    for(const z of [15,16,17]) $('edit-zoom-size-'+z).value=p.zoomSizesPercent[z];
+    $('edit-image-scale').value=String(p.imageScale);
+    $('edit-image-scale-range').value=String(p.imageScale);
+    $('edit-image-scale-value').textContent=fmt(p.imageScale)+'×';
+    const activeZoom=p.type==='image'?p.imageZoomSizesPercent:p.zoomSizesPercent;
+    for(const z of [15,16,17]) $('edit-zoom-size-'+z).value=activeZoom[z];
     $('edit-image-opacity').value=Math.round((1-p.imageOpacity)*100);
     $('edit-image-opacity-value').textContent=Math.round((1-p.imageOpacity)*100)+'%';
     $('holo-opacity').value=p.holoTransparency;
@@ -98,7 +103,7 @@
     $('editor-image-fields').hidden=p.type!=='image';
     $('upload-glb').value='';$('upload-image').value='';
     const preview=$('asset-preview-img');
-    const imagePath=p.imageMode==='standard'?assets.image:(p.image||placeholders.image);
+    const imagePath=builtinImages.includes(p.imageMode)?assets[p.imageMode]:(p.image||placeholders.image);
     if(imagePath) preview.src=uploadedKey(imagePath);else preview.removeAttribute('src');
   }
   function render(){renderFields();}
@@ -110,6 +115,7 @@
       if(key==='model')p.customModelUrl=p.model;
       if(key==='model'||key==='image')notifyAssetChange();
       if(key==='scale') { $('edit-scale-range').value=String(p.scale);$('edit-scale').value=String(p.scale);$('edit-scale-value').textContent=fmt(p.scale)+'×'; }
+      if(key==='imageScale') { $('edit-image-scale-range').value=String(p.imageScale);$('edit-image-scale').value=String(p.imageScale);$('edit-image-scale-value').textContent=fmt(p.imageScale)+'×'; }
       if(key==='rotation'){$('edit-rotation-range').value=String(p.rotation);$('edit-rotation').value=String(p.rotation);$('edit-rotation-value').textContent=fmt(p.rotation)+'°';}
       if(key==='imageOpacity')$('edit-image-opacity-value').textContent=Math.round((1-p.imageOpacity)*100)+'%';
       status('変更を編集中です。「地図に反映」で更新できます。');
@@ -120,12 +126,14 @@
   ])change(id,key);
   for(const [id,key] of [
     ['edit-lat','lat'],['edit-lng','lng'],['edit-scale','scale'],['edit-scale-range','scale'],
+    ['edit-image-scale','imageScale'],['edit-image-scale-range','imageScale'],
     ['edit-rotation','rotation'],['edit-rotation-range','rotation'],['edit-altitude','altitude'],
     ['edit-image-offset-x','imageOffsetX'],['edit-image-offset-y','imageOffsetY'],
   ])change(id,key,numeric);
   for(const zoom of [15,16,17]){
     $('edit-zoom-size-'+zoom).addEventListener('input',e=>{
-      selectedPin().zoomSizesPercent[zoom]=numeric(e.target.value);
+      const p=selectedPin();
+      (p.type==='image'?p.imageZoomSizesPercent:p.zoomSizesPercent)[zoom]=numeric(e.target.value);
       status('ZOOM '+zoom+' の表示比率（％）を編集中です。');
     });
   }
@@ -151,9 +159,9 @@
   async function uploadFile(kind,file){
     if(!file)return;
     const ext=file.name.split('.').pop().toLowerCase();
-    if(kind==='image'&&!['jpg','jpeg','png','svg','webp'].includes(ext)){status('画像はJPG・PNG・SVG・WebPを選んでください。',true);return;}
+    if(kind==='image'&&!['png','svg','webp'].includes(ext)){status('画像はPNG・SVG・WebPを選んでください。',true);return;}
     if(kind==='model'&&ext!=='glb'){status('3DモデルはGLBファイルを選んでください。',true);return;}
-    if(file.size>25*1024*1024){status('素材は25MB以下にしてください。',true);return;}
+    if(file.size>10*1024*1024){status('素材は10MB以内にしてください。',true);return;}
     // 拡張子だけでなくGLB 2.0のヘッダーを検査する（完全な互換性検査ではない）。
     if(kind==='model'){
       try{
@@ -178,7 +186,10 @@
   const previewPins=()=>[draft.pins[0]].map(p=>{
     const copy=clone(p);
     if(copy.type==='3d')copy.model=uploadedKey(copy.model||placeholders.glb);
-    if(copy.type==='image')copy.image=copy.imageMode==='standard' ? assets.image : uploadedKey(copy.image||placeholders.image);
+    if(copy.type==='image'){
+      copy.image=builtinImages.includes(copy.imageMode)?assets[copy.imageMode]:uploadedKey(copy.image||placeholders.image);
+      copy.zoomSizesPercent=clone(copy.imageZoomSizesPercent);
+    }
     return copy;
   });
 
@@ -189,8 +200,10 @@
       if(!p.id||ids.has(p.id))throw new Error('ピンIDが重複しています。');ids.add(p.id);
       if(!Number.isFinite(p.lat)||p.lat < -85||p.lat > 85||!Number.isFinite(p.lng)||p.lng < -180||p.lng>180)
         throw new Error(p.id+' の緯度・経度を確認してください。');
-      if(![15,16,17].every(z=>Number.isFinite(p.zoomSizesPercent?.[z])&&p.zoomSizesPercent[z]>=1&&p.zoomSizesPercent[z]<=500))
-        throw new Error(p.id+' のZOOM 15・16・17の表示比率は各1～500%で指定してください。');
+      for(const zooms of [p.zoomSizesPercent,p.imageZoomSizesPercent]){
+        if(![15,16,17].every(z=>Number.isFinite(zooms?.[z])&&zooms[z]>=1&&zooms[z]<=500))
+          throw new Error(p.id+' のZOOM 15・16・17の表示比率は各1～500%で指定してください。');
+      }
       if(p.type==='3d'){
         if(!Number.isFinite(p.holoTransparency)||p.holoTransparency<0||p.holoTransparency>95)
           throw new Error(p.id+' の3D透過率は0～95%です。');
@@ -199,11 +212,13 @@
         if(!Number.isFinite(p.rotation)||Math.abs(p.rotation)>360||!Number.isFinite(p.altitude))throw new Error(p.id+' の回転角は±360°以内、高さは数値で指定してください。');
         if(typeof p.model!=='string')throw new Error(p.id+' のGLB URL・パスが不正です。');
       }else if(p.type==='image'){
-        if(!['standard','custom'].includes(p.imageMode))throw new Error(p.id+' の画像マーカーの種類が不正です。');
+        if(![...builtinImages,'custom'].includes(p.imageMode))throw new Error(p.id+' の画像マーカーの種類が不正です。');
         if(typeof p.image!=='string')throw new Error(p.id+' の画像URL・パスが不正です。');
         if(!['bottom','center'].includes(p.imageAnchor))throw new Error(p.id+' の画像基準位置を選択してください。');
         if(!Number.isFinite(p.imageOffsetX)||!Number.isFinite(p.imageOffsetY)||
            Math.abs(p.imageOffsetX)>1000||Math.abs(p.imageOffsetY)>1000)throw new Error(p.id+' の位置オフセットは±1000px以内です。');
+        if(!(Number.isFinite(p.imageScale)&&p.imageScale>=.05&&p.imageScale<=30))
+          throw new Error(p.id+' の画像倍率は0.05～30倍です。');
         if(!Number.isFinite(p.imageOpacity)||p.imageOpacity<0||p.imageOpacity>1)
           throw new Error(p.id+' の画像透過率を確認してください。');
       }else throw new Error(p.id+' の表示形式が不正です。');
@@ -239,19 +254,6 @@
     render();document.dispatchEvent(new Event('holo-editor:draft-change'));
     status('座標を入力しました。「地図に反映」で確認できます。');
   });
-  $('address-search').addEventListener('click',async()=>{
-    const p=selectedPin();if(!p?.address?.trim()){status('住所を先に入力してください。',true);return;}
-    status('住所を検索しています…');
-    try{
-      const url='https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(p.address);
-      const res=await fetch(url,{headers:{'Accept-Language':'ja'}});
-      if(!res.ok)throw new Error('検索サービスが応答しません（'+res.status+'）');
-      const data=await res.json();if(!data.length)throw new Error('座標が見つかりません');
-      p.lat=Number(data[0].lat);p.lng=Number(data[0].lon);
-      renderFields();document.dispatchEvent(new Event('holo-editor:draft-change'));
-      status('座標を取得しました。地図に反映してください。');
-    }catch(e){status(e.message+'。検索が制限される場合は座標を直接入力してください。',true);}
-  });
 
   // MAP STYLE: 地図のスタイル変更は外側HTMLからイベントを受けて同期する。
   document.querySelectorAll('[data-map-style]').forEach(button=>button.addEventListener('click',()=>{
@@ -274,7 +276,7 @@
     const settings=clone(draft);
     settings.pins=[settings.pins[0]].map(p=>{
       const common={id:p.id,type:p.type,name:p.name,address:p.address,lng:p.lng,lat:p.lat,
-        zoomSizesPercent:p.zoomSizesPercent};
+        zoomSizesPercent:p.type==='image'?p.imageZoomSizesPercent:p.zoomSizesPercent};
       // 1ピンのみ出力。表示形式と無関係な設定は省きます。
       if(p.type==='3d'){
         return {...common,model:p.model,color:p.color,scale:p.scale,rotation:p.rotation,
@@ -282,7 +284,7 @@
       }
       return {...common,imageMode:p.imageMode,image:p.image,
         imageAnchor:p.imageAnchor,imageOffsetX:p.imageOffsetX,
-        imageOffsetY:p.imageOffsetY,imageOpacity:p.imageOpacity};
+        imageOffsetY:p.imageOffsetY,imageOpacity:p.imageOpacity,imageScale:p.imageScale};
     });
     return settings;
   }

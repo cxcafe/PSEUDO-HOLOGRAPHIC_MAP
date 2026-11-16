@@ -280,8 +280,9 @@
     return sizes[low]+(sizes[high]-sizes[low])*(z-low);
   }
   const scene = new THREE.Scene();
-  scene.add(new THREE.HemisphereLight(0xd5ffff, 0x183b48, 1.2));
-  const sunlight = new THREE.DirectionalLight(0xc4fdff, 1.1);
+  // v1.6の立体的な材質表現を維持し、指定色に干渉しない白色光で照らす。
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x404040, 1.2));
+  const sunlight = new THREE.DirectionalLight(0xffffff, 1.1);
   sunlight.position.set(18,35,15);
   scene.add(sunlight);
   const camera = new THREE.Camera();
@@ -350,11 +351,9 @@
     loadingModels.add(point.id);
     updateMarkerStatus();
     try{
-      const isStandard = point.model === 'pin' || point.model === 'building';
-      const standardAssets = window.HOLO_STANDARD_EMBEDDED_ASSETS || {};
-      const modelUrl = isStandard
-        ? (standardAssets[point.model] || SETTINGS.standardAssets[point.model])
-        : point.model;
+      const isStandard = ['pin','building','magic'].includes(point.model);
+      // プレビューとEXPORTは同じ標準GLBファイルを読み込む。
+      const modelUrl = isStandard ? SETTINGS.standardAssets[point.model] : point.model;
       if (location.protocol === 'file:' && !/^(https?:|blob:|data:)/i.test(modelUrl)) {
         throw new Error('ローカルファイルから相対パスのGLBは読み込めません。');
       }
@@ -363,16 +362,13 @@
       const result=await loadWithTimeout(loader.loadAsync(modelUrl), 30000);
       if(!stillCurrent()) return;
       const model=result.scene;
-      // モデルの最大辺を基準寸法に揃える。
+      // モデルの横幅（X軸）を10mに揃える。
       const bounds=new THREE.Box3().setFromObject(model);
       if(bounds.isEmpty()) throw new Error('GLB内に表示可能なメッシュがありません');
       if(!bounds.isEmpty()){
         const size=bounds.getSize(new THREE.Vector3());
-        const maxSide=Math.max(size.x,size.y,size.z);
-        if(!Number.isFinite(maxSide) || maxSide <= 0) throw new Error('モデルの形状サイズが不正です。');
-        const baseMaxSideMeters = point.model === 'pin' ? 24
-          : point.model === 'building' ? 13.92 : 10;
-        const factor=baseMaxSideMeters/maxSide;
+        if(!Number.isFinite(size.x) || size.x <= 0) throw new Error('モデルの横幅が不正です。');
+        const factor=10/size.x;
         const center=bounds.getCenter(new THREE.Vector3());
         model.scale.multiplyScalar(factor);
         model.position.set(-center.x*factor,-bounds.min.y*factor,-center.z*factor);
@@ -383,12 +379,13 @@
         child.frustumCulled=false;
         child.renderOrder=1;
         const customize = (original)=>{
+          // 元の材質を複製して頂点アルファ・材質表現を維持する。
           const mat=original.clone();
           if(mat.color) mat.color.copy(tint);
           if(mat.emissive) mat.emissive.copy(tint);
           if('emissiveIntensity' in mat) mat.emissiveIntensity=.28;
           mat.transparent=true;
-          mat.opacity=holoOpacity(point);
+          mat.opacity=holoOpacity(point)*Number(original.opacity ?? 1);
           mat.depthWrite=false;
           mat.depthTest=true;
           mat.side=THREE.DoubleSide;
